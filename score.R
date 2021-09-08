@@ -1,5 +1,8 @@
+
 library(tidyverse)
 library(dplyr)
+library(raster)
+library(rgdal)
 
 #general exploration
 
@@ -37,6 +40,8 @@ institution<-institution%>%
   mutate(OpenScore_institution=institution$X1/as.numeric(7)*100)
   
 institution$score<-paste0(round(institution$X1/as.numeric(7)*100,2),"%")
+institution$institutionType<-ifelse(grepl("schung",institution$Einrichtungsart),"ForschungsInstitution",ifelse(grepl("Uni",institution$Einrichtungsart),"Universität","Hochschule"))
+
 
 
 #plot the score by the bundesländer 
@@ -47,7 +52,9 @@ institution%>%
   geom_col(alpha = 0.8, width = 0.8)+
   Template+
   coord_flip()
-ggsave("plots/score_country.png",dpi=500,width = 15,height=5)
+ggsave("plots/score_bundesländer.png",dpi=500,width = 15,height=5)
+
+
 ##plot the score by the institution level
 institution%>%
   group_by(Name.der.Institution)%>%
@@ -62,10 +69,11 @@ ggsave("plots/score_institution.png",dpi=500,width = 15,height=5)
 
 ##plot the score by country
 institution%>%
+  group_by(institutionType)%>%
   summarise(countryScore=mean(OpenScore))%>%
-  ggplot(aes(x=0,y=countryScore))+
+  ggplot(aes(x=institutionType,y=countryScore,fill=institutionType))+
   geom_col(alpha = 0.8, width = 0.8)+
-  geom_text(aes(x=0,y=countryScore,label=round(countryScore*100,2)))+
+  geom_text(aes(x=institutionType,y=countryScore,label=round(countryScore,2)))+
   Template+
   theme(axis.text.y=element_blank(),
         axis.ticks.y=element_blank())+
@@ -77,6 +85,16 @@ ggsave("plots/score_country.png",dpi=500,width = 15,height=5)
 institution$Einrichtungsart<-factor(institution$Einrichtungsart,unique(institution$Einrichtungsart))
 
 institution%>%
+  group_by(X,institutionType)%>%
+  dplyr::summarise(Freq=n())%>%
+  ggplot(aes(x=reorder(X,Freq),y=Freq,fill=institutionType))+
+  geom_col(alpha = 0.8, width = 0.8)+
+  Template+
+  coord_flip()
+
+ggsave("plots/Bundesländer_institutionType.png",dpi=500,width = 15,height=5)
+###core by the type
+institution%>%
   group_by(X,Einrichtungsart)%>%
   dplyr::summarise(Freq=n())%>%
   ggplot(aes(x=reorder(X,Freq),y=Freq,fill=Einrichtungsart))+
@@ -86,20 +104,61 @@ institution%>%
 
 ggsave("plots/c_institution_country_institutionType.png",dpi=500,width = 15,height=5)
 
+colnames(institution)
+clean<-institution[,c( "Wikidata.ID","X","Name.der.Institution", "Ort","Einrichtungsart", "OA.Webseite.der.Institution" ,"OA.Beauftragte.r","OA.Policy","OA.Leitlinie","Berliner.Erklärung", "OA2020" ,  "bool_OA_Website"                             
+                       ,"bool_OA_Beauftragte"                         
+                       ,"bool_OA.Policy"                              
+                       ,"bool_OA.Leitlinie"                           
+                       ,"bool_Repositorium.URL"                       
+                       ,"bool_Berliner.Erklärung"                     
+                       ,"bool_OA2020"                                 
+                       ,"X1"                                          
+                       ,"score"                                       
+                       ,"OpenScore"                                   
+                       ,"OpenScore_institution"   )]
+write.csv(test[,c(2:ncol(test))],"data/cleanScore.csv",row.names = FALSE)
+test<-read.csv("data/cleanScore.csv")
+  
+##map
+germany<-getData(country="Germany",level=1)
+germany<-readRDS("data/gadm36_DEU_1_sp.rds")
+
+ggplot()+
+  geom_polygon(data=germany,
+               aes(x = long, y = lat, group = group),
+               colour = "grey10", fill = "#fff7bc")+
+  theme(axis.text.y=element_blank(),
+        axis.ticks.y=element_blank())+
+  Template
 
 
+temp <- tempfile()
+download.url <- "https://userpage.fu-berlin.de/soga/300/30100_data_sets/spatial/"
+zipfile <- "osm_pois_p.zip"
+download.file(paste0(download.url, zipfile), temp, mode = "wb")
+unzip(temp)
+unlink(temp)
 
 
-for (i in 1:length(index)){
-institution$index[i]<-factor(institution$index[i],unique(institution$index[i]))
-  institution%>%
-    group_by(X,index[i]))%>%
-    dplyr::summarise(Freq=n())%>%
-    ggplot(aes(x=reorder(X,Freq),y=Freq,fill=index[i])))+
-    geom_col(alpha = 0.8, width = 0.8)+
-    Template+
-    coord_flip()
-  name<-paste0("plots/c_institution_country_",institution$index[i],".png")
-ggsave(name,dpi=500,width = 15,height=5)
-}
+pois <- rgdal::readOGR(dsn = ".", "osm_pois_p", 
+                use_iconv = TRUE, # enable encoding
+                encoding = "UTF-8",path.expand("C:\\Users\\elean\\AppData\\Local\\Temp\\RtmpwFzgUU\\file50ac378f5b2b"))
+temp
+
+#for (i in 1:length(index)){
+#institution$index[i]<-factor(institution$index[i],unique(institution$index[i]))
+  #institution%>%
+   # group_by(X,index[i]))%>%
+    #dplyr::summarise(Freq=n())%>%
+    #ggplot(aes(x=reorder(X,Freq),y=Freq,fill=index[i])))+
+    #geom_col(alpha = 0.8, width = 0.8)+
+    #Template+
+    #coord_flip()
+  #name<-paste0("plots/c_institution_country_",institution$index[i],".png")
+#ggsave(name,dpi=500,width = 15,height=5)
+#}
+
+###API 
+#institution[institution$Wikidata.ID!=""]
+
   
