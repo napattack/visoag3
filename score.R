@@ -5,13 +5,15 @@ library(raster)
 library(rgdal)
 
 #general exploration
-
+#input data 
 institution<-read.delim("data/Bundesländer-Atlas - Institutionen.tsv",encoding = "UTF-8")
 country<-read.delim("data/Bundesländer-Atlas - Länder.tsv",encoding = "UTF-8")
+#general template for plotting
 Template <- theme(axis.title = element_blank(),
                   axis.ticks = element_blank(),
                   axis.text.y = element_text(size = 12),
                   panel.background = element_blank())
+#data cleaning and processing 
 institution[institution$X==" Sachsen",1]<-"Sachsen"
 institution<-institution%>%
   mutate(bool_OA_Website=ifelse(is.na(OA.Webseite.der.Institution)|OA.Webseite.der.Institution=="Recherche fehlt","FALSE","TRUE"))%>%
@@ -22,7 +24,7 @@ institution<-institution%>%
   mutate(bool_Berliner.Erklärung=ifelse(is.na(Berliner.Erklärung)|Berliner.Erklärung=="nein","FALSE","TRUE"))%>%
   mutate(bool_OA2020=ifelse(is.na(OA2020)|OA2020=="nein","FALSE","TRUE"))
 result<-data.frame(matrix(ncol=1,nrow=0))
-
+#we calculate score of openess level by our 7 indicator here, and sum it up 100% as the we defined as fully openness
 for(i in c(1:nrow(institution))){
   institution_score<-as.numeric(0)
   institution_score<-ifelse(institution$bool_OA_Website[i]=="TRUE",institution_score+1,institution_score+0)
@@ -36,10 +38,12 @@ for(i in c(1:nrow(institution))){
 }
 
 institution<-cbind(institution,result)
+#transform formate into %
 institution<-institution%>%
   mutate(OpenScore_institution=institution$X1/as.numeric(7)*100)
   
 institution$score<-paste0(round(institution$X1/as.numeric(7)*100,2),"%")
+#seperate type of institution into three groups 
 institution$institutionType<-ifelse(grepl("schung",institution$Einrichtungsart),"ForschungsInstitution",ifelse(grepl("Uni",institution$Einrichtungsart),"Universität","Hochschule"))
 
 
@@ -50,8 +54,31 @@ institution%>%
   summarise(countryScore=mean(OpenScore))%>%
   ggplot(aes(x=reorder(X,countryScore),y=countryScore))+
   geom_col(alpha = 0.8, width = 0.8)+
+  geom_text(aes(x=reorder(X,countryScore),label=round(countryScore,2)))+
   Template+
   coord_flip()
+ggsave("plots/score_bundesländer.png",dpi=500,width = 15,height=5)
+##split into type?
+g1<-institution%>%
+  group_by(X)%>%
+  summarise(countryScore=mean(OpenScore))%>%
+  ggplot(aes(x=X,y=countryScore))+
+  geom_col(alpha = 0.8, width = 0.8)+
+  Template+
+  coord_flip()
+g2<-institution%>%
+  group_by(X,institutionType)%>%
+  summarise(TypecountryScore=mean(OpenScore))%>%
+  group_by(X)%>%
+  mutate(countryScore=mean(TypecountryScore))%>%
+  data.frame()%>%
+  ggplot()+
+  geom_point(aes(x=X,y=countryScore,fill=institutionType))+
+  Template+
+  coord_flip()
+g1+g2
+  
+
 ggsave("plots/score_bundesländer.png",dpi=500,width = 15,height=5)
 
 
@@ -105,6 +132,7 @@ institution%>%
 ggsave("plots/c_institution_country_institutionType.png",dpi=500,width = 15,height=5)
 
 colnames(institution)
+#save clean data for other usage
 clean<-institution[,c( "Wikidata.ID","X","Name.der.Institution", "Ort","Einrichtungsart", "OA.Webseite.der.Institution" ,"OA.Beauftragte.r","OA.Policy","OA.Leitlinie","Berliner.Erklärung", "OA2020" ,  "bool_OA_Website"                             
                        ,"bool_OA_Beauftragte"                         
                        ,"bool_OA.Policy"                              
@@ -115,10 +143,12 @@ clean<-institution[,c( "Wikidata.ID","X","Name.der.Institution", "Ort","Einricht
                        ,"X1"                                          
                        ,"score"                                       
                        ,"OpenScore"                                   
-                       ,"OpenScore_institution"   )]
-write.csv(test[,c(2:ncol(test))],"data/cleanScore.csv",row.names = FALSE)
+                       ,"OpenScore_institution",
+                       "institutionType")]
+write.csv(clean,"data/cleanScore.csv",row.names = FALSE)
 test<-read.csv("data/cleanScore.csv")
-  
+  ####
+####the code below is still developing
 ##map
 germany<-getData(country="Germany",level=1)
 germany<-readRDS("data/gadm36_DEU_1_sp.rds")
