@@ -61,36 +61,10 @@ institution%>%
   coord_flip()
 ggsave("plots/score_bundesländer.png",dpi=500,width = 15,height=5)
 
-##split into type?this graph UNDERDEVELOPMENT....
-g1<-institution%>%
-  group_by(X)%>%
-  summarise(countryScore=mean(OpenScore_institution))%>%
-  ggplot(aes(x=X,y=countryScore))+
-  geom_col(alpha = 0.8, width = 0.8)+
-  Template+
-  coord_flip()
-g2<-institution%>%
-  group_by(X,institutionType)%>%
-  summarise(TypecountryScore=mean(OpenScore_institution))%>%
-  ggplot(aes(x=X,y=countryScore,fill=institutionType))+
-  geom_col(alpha = 0.8, width = 0.8)+
-  Template+
-  coord_flip()
 
 
-%>%
-  group_by(X)%>%
-  mutate(countryScore=mean(TypecountryScore))%>%
-  data.frame()%>%
-  ggplot()+
-  geom_point(aes(x=X,y=countryScore,fill=institutionType))+
-  Template+
-  coord_flip()
-g1+g2
+
   
-
-ggsave("plots/score_bundesländer.png",dpi=500,width = 15,height=5)
-
 
 ##plot the score by the institution level
 institution%>%
