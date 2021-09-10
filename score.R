@@ -1,8 +1,6 @@
 
 library(tidyverse)
 library(dplyr)
-library(raster)
-library(rgdal)
 
 #general exploration
 #input data 
@@ -17,6 +15,8 @@ Template <- theme(axis.title = element_blank(),
 institution[institution$X==" Sachsen",1]<-"Sachsen"
 institution<-institution%>%
   filter(Einrichtungsart!="Ressortforschung")
+institution$institutionType<-ifelse(grepl("schung",institution$Einrichtungsart),"ForschungsInstitution",ifelse(grepl("Uni",institution$Einrichtungsart),"Universität","Hochschule"))
+
 institution<-institution%>%
   mutate(bool_OA_Website=ifelse(is.na(OA.Webseite.der.Institution)|OA.Webseite.der.Institution=="Recherche fehlt","FALSE","TRUE"))%>%
   mutate(bool_OA_Beauftragte=ifelse(is.na(OA.Beauftragte.r)|OA.Beauftragte.r=="Recherche fehlt","FALSE","TRUE"))%>%
@@ -27,7 +27,7 @@ institution<-institution%>%
   mutate(bool_Berliner.Erklärung=ifelse(is.na(Berliner.Erklärung)|Berliner.Erklärung=="nein","FALSE","TRUE"))%>%
   mutate(bool_OA2020=ifelse(is.na(OA2020)|OA2020=="nein","FALSE","TRUE"))
 result<-data.frame(matrix(ncol=1,nrow=0))
-#we calculate score of openess level by our 7 indicator here, and sum it up 100% as the we defined as fully openness
+#we calculate score of openess level by our 6 indicator here, and sum it up 100% as the we defined as fully openness
 for(i in c(1:nrow(institution))){
   institution_score<-as.numeric(0)
   institution_score<-ifelse(institution$bool_OA_Website[i]=="TRUE",institution_score+1,institution_score+0)
@@ -42,11 +42,15 @@ for(i in c(1:nrow(institution))){
 institution<-cbind(institution,result)
 #transform formate into %
 institution<-institution%>%
-  mutate(OpenScore_institution=institution$X1/as.numeric(6)*100)
+  mutate(OpenScore_institution=round(institution$X1/as.numeric(6)*100,2))
   
 institution$score<-paste0(round(institution$X1/as.numeric(6)*100,2),"%")
-#seperate type of institution into three groups 
-institution$institutionType<-ifelse(grepl("schung",institution$Einrichtungsart),"ForschungsInstitution",ifelse(grepl("Uni",institution$Einrichtungsart),"Universität","Hochschule"))
+#calculate the other level of openness
+institution<-institution%>%group_by(X)%>%
+  mutate(bundesländer_score=round(mean(OpenScore_institution),2))
+
+institution<-institution%>%
+  mutate(country_score=round(mean(institution$OpenScore_institution),2))
 
 
 
@@ -131,10 +135,37 @@ clean<-institution[,c( "Wikidata.ID","X","Name.der.Institution", "Ort",
                        ,"bool_OA2020"                                 
                        ,"X1"                                          
                        ,"score"                                       
-                       ,"OpenScore_institution"                                   
+                       ,"OpenScore_institution",
+                        "bundesländer_score",
+                        "country_score"
                        ,"institutionType")]
 write.csv(clean,"data/cleanScore.csv",row.names = FALSE)
 test<-read.csv("data/cleanScore.csv")
-####
-####the code below is still developing
-##map
+
+test<-test%>%
+  mutate(Score_web_de=nrow(test%>%filter(bool_OA_Website=="TRUE"))/nrow(test))%>%
+  mutate(Score_Beauftragte_de=nrow(test%>%filter(bool_OA_Beauftragte=="TRUE"))/nrow(test))%>%
+  mutate(Score_PL_de=nrow(test%>%filter(bool_OA.PL=="TRUE"))/nrow(test))%>%
+  mutate(Score_Repositorium_de=nrow(test%>%filter(bool_Repositorium.URL=="TRUE"))/nrow(test))%>%
+  mutate(Score_OA2020_de=nrow(test%>%filter(bool_OA2020=="TRUE"))/nrow(test))%>%
+  mutate(Score_Berliner.Erklärung_de=nrow(test%>%filter(bool_Berliner.Erklärung=="TRUE"))/nrow(test))
+  
+p<-test[1,c(26,27,28,29,30,31)]
+row.names(p)
+
+  
+  
+test<-test%>%
+  group_by(X)%>%
+  mutate(Score_web_Bunde=nrow(test%>%filter(bool_OA_Website=="TRUE"))/nrow(test))
+  
+  
+  
+  
+  mutate(Score_Beauftragte_Bunde=nrow(test%>%filter(bool_OA_Beauftragte=="TRUE"))/nrow(test))%>%
+  mutate(Score_PL_Bunde=nrow(test%>%filter(bool_OA.PL=="TRUE"))/nrow(test))%>%
+  mutate(Score_Repositorium_Bunde=nrow(test%>%filter(bool_Repositorium.URL=="TRUE"))/nrow(test))%>%
+  mutate(Score_OA2020_Bunde=nrow(test%>%filter(bool_OA2020=="TRUE"))/nrow(test))%>%
+  mutate(Score_Berliner.Erklärung_Bunde=nrow(test%>%filter(bool_Berliner.Erklärung=="TRUE"))/nrow(test))
+
+  
