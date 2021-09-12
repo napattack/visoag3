@@ -15,6 +15,9 @@ Template <- theme(axis.title = element_blank(),
 institution[institution$X==" Sachsen",1]<-"Sachsen"
 institution<-institution%>%
   filter(Einrichtungsart!="Ressortforschung")
+
+
+
 institution$institutionType<-ifelse(grepl("schung",institution$Einrichtungsart),"ForschungsInstitution",ifelse(grepl("Uni",institution$Einrichtungsart),"Universität","Hochschule"))
 
 institution<-institution%>%
