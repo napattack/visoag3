@@ -81,6 +81,7 @@ for(i in c(1:nrow(institution))){
   if(!is.na(institution$add.OA.Policy.URL[i])){
     add.col<-paste0(add.col," OA Policy URL:",institution$add.OA.Policy.URL[i])
   }else{add.col<-paste0(add.col,"")}
+
   if(!is.na(institution$add.OA.Leitlinie.URL[i])){
     add.col<-paste0(add.col," OA Leitlinie URL:",institution$add.OA.Leitlinie.URL[i])
   }else{add.col<-paste0(add.col,"")}
@@ -89,7 +90,10 @@ for(i in c(1:nrow(institution))){
   }else{add.col<-paste0(add.col,"")}
   if(!is.na(institution$add.OA.Verlag.URL[i])){
     add.col<-paste0(add.col," OA Verlag URL:",institution$add.OA.Verlag.URL[i])
-  }else{add.col<-paste0(add.col,"")}
+  }else{add.col<-paste0(add.col,"")
+  
+  }
+
   
   add.infos<-rbind(add.infos,add.col)
   
