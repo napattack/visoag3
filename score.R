@@ -55,10 +55,52 @@ institution<-institution%>%group_by(X)%>%
 institution<-institution%>%
   mutate(country_score=round(mean(institution$OpenScore_institution),2))
 
+##clean the NA, and nein,.. in the addtional info column, later we want to plot them on the map in the popup 
+institution<-institution%>%
+  mutate(add.OA_Website=ifelse(OA.Webseite.der.Institution=="Recherche fehlt",NA,OA.Webseite.der.Institution))%>%
+  mutate(add.OA_Beauftragte=ifelse(OA.Beauftragte.r=="Recherche fehlt",NA,OA.Beauftragte.r))%>%
+  mutate(add.OA_Beauftragte_URL=ifelse(OA.Beauftragte.r.URL=="Recherche fehlt",NA,OA.Beauftragte.r.URL))%>%
+  mutate(add.OA.Policy.URL=ifelse(OA.Policy.URL=="Recherche fehlt",NA,OA.Policy.URL))%>%
+  mutate(add.OA.Leitlinie.URL=ifelse(OA.Leitlinie.URL=="Recherche fehlt",NA,OA.Leitlinie.URL))%>%
+  mutate(add.Repositorium.URL=ifelse(Repositorium.URL=="Recherche fehlt",NA,Repositorium.URL))%>%
+  mutate(add.OA.Verlag.URL=ifelse(OA.Verlag=="nein",NA,OA.Verlag))
 
+add.infos<- data.frame(infos = as.character())
+for(i in c(1:nrow(institution))){
+  add.col<-data.frame(infos = as.character())
+  add.col<-" "
+  if(!is.na(institution$add.OA_Website[i])){
+    add.col<-paste0(" OA websites:",institution$add.OA_Website[i])
+  }else{add.col<-paste0(add.col,"")}
+  if(!is.na(institution$add.OA_Beauftragte[i])){
+    add.col<-paste0(add.col," OA Beauftragte:",institution$add.OA_Beauftragte[i])
+  }else{add.col<-paste0(add.col,"")}
+  if(!is.na(institution$add.OA_Beauftragte_URL[i])){
+    add.col<-paste0(add.col," OA Beauftragte URL:",institution$add.OA_Beauftragte_URL[i])
+  }else{add.col<-paste0(add.col,"")}
+  if(!is.na(institution$add.OA.Policy.URL[i])){
+    add.col<-paste0(add.col," OA Policy URL:",institution$add.OA.Policy.URL[i])
+  }else{add.col<-paste0(add.col,"")}
+  if(!is.na(institution$add.OA.Leitlinie.URL[i])){
+    add.col<-paste0(add.col," OA Leitlinie URL:",institution$add.OA.Leitlinie.URL[i])
+  }else{add.col<-paste0(add.col,"")}
+  if(!is.na(institution$add.Repositorium.URL[i])){
+    add.col<-paste0(add.col," OA Repositorium URL:",institution$add.Repositorium.URL[i])
+  }else{add.col<-paste0(add.col,"")}
+  if(!is.na(institution$add.OA.Verlag.URL[i])){
+    add.col<-paste0(add.col," OA Verlag URL:",institution$add.OA.Verlag.URL[i])
+  }else{add.col<-paste0(add.col,"")}
+  
+  add.infos<-rbind(add.infos,add.col)
+  
+}
+
+institution<-cbind(institution,add.infos)
+
+names(institution)[names(institution)=="X...OA.Repositorium.URL.https...www.hgb.leipzig.de.einrichtungen.bibliothek.qucosa.."]<-"additional.infos"
 
 #plot the score by the bundesländer 
-institution%>%
+plot <-institution%>%
   group_by(X)%>%
   summarise(countryScore=mean(OpenScore_institution))%>%
   ggplot(aes(x=reorder(X,countryScore),y=countryScore))+
@@ -66,10 +108,8 @@ institution%>%
   geom_text(aes(x=reorder(X,countryScore),label=round(countryScore,2)))+
   Template+
   coord_flip()
+plot
 ggsave("plots/score_bundesländer.png",dpi=500,width = 15,height=5)
-
-
-
 
   
 
@@ -125,10 +165,8 @@ ggsave("plots/c_institution_country_institutionType.png",dpi=500,width = 15,heig
 colnames(institution)
 #save clean data for other usage
 clean<-institution[,c( "Wikidata.ID","X","Name.der.Institution", "Ort",
-             "Einrichtungsart", "OA.Webseite.der.Institution" ,
-             "OA.Beauftragte.r","OA.Policy",
-             "OA.Leitlinie","Berliner.Erklärung", "OA2020" , 
-             "bool_OA_Website"                             
+             "Einrichtungsart", 
+                       "bool_OA_Website"                             
                        ,"bool_OA_Beauftragte"                         
                        ,"bool_OA.Policy"                              
                        ,"bool_OA.Leitlinie"  
@@ -141,7 +179,15 @@ clean<-institution[,c( "Wikidata.ID","X","Name.der.Institution", "Ort",
                        ,"OpenScore_institution",
                         "bundesländer_score",
                         "country_score"
-                       ,"institutionType")]
+                       ,"institutionType",
+                        "add.OA_Website",                              
+              "add.OA_Beauftragte"  ,                        
+              "add.OA_Beauftragte_URL",                      
+            "add.OA.Policy.URL",                           
+            "add.OA.Leitlinie.URL",                        
+             "add.Repositorium.URL" ,                       
+             "add.OA.Verlag.URL",                           
+             "additional.infos"  )]
 write.csv(clean,"data/cleanScore.csv",row.names = FALSE)
 test<-read.csv("data/cleanScore.csv")
 

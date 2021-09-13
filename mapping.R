@@ -27,24 +27,10 @@ unique_join<-unique_join%>%
 length(unique(unique_join$Wikidata.ID))
 #write.csv(unique_join,"data/mapping.csv")
 ##get map germany, and additional info from original data
-add.info<-institution[,c("Wikidata.ID","OA.Webseite.der.Institution","OA.Beauftragte.r.URL","X.Funktions..Emailadresse","OA.Policy.URL","OA.Leitlinie.URL","Repositorium.URL","OA.Verlag.URL")]
-#clean up Reschercher fehlt, na,nein 
-
-add.info<-replace_with_na(data=add.info,replace = list(add.info$OA.Webseite.der.Institution=="Recherche fehlt"))
-
-add.info[add.info$OA.Webseite.der.Institution=="Recherche fehlt",2]<-" "
-
-ggsave("plots/map.html")
-#add.score<-read.csv("data/cleanScore.csv")
-
-#Infos<-left_join(add.score%>%filter(!is.na(Wikidata.ID))%>%filter(Wikidata.ID!="Recherche fehlt"),add.info%>%filter(!is.na(Wikidata.ID))%>%filter(Wikidata.ID!="Recherche fehlt"),by=c("Wikidata.ID"="Wikidata.ID"))
-#Infos<-Infos[order(Infos$Wikidata.ID,-abs(Infos$OpenScore_institution)),]
-#Infos<-Infos[!duplicated(Infos$Wikidata.ID),]
 
 
-additional_info_join<-left_join(unique_join,add.info,by=c("Wikidata.ID"="Wikidata.ID"))
-colnames(unique_join)
-map.data<-as.data.frame.list(unique_join[c( "lon","lat","OpenScore_institution")])
+
+map.data<-unique_join
 ##input additional information as a pop up
 
 
@@ -52,9 +38,12 @@ map.data<-as.data.frame.list(unique_join[c( "lon","lat","OpenScore_institution")
 #  addCircleMarkers(data=map.data,lat =map.data$lat,lng = map.data$lon,radius =~10*OpenScore_institution*0.01) 
 
 ui <- fluidPage(
-  titlePanel("OpenAccess Visibility"),
-  tags$a("How we measure the OA level? "),
-  tags$a("OA Webseite of institution, OA-Beauftragte/r, OA Policy OR OA Leitlinie,Repositorium URL,Berliner Erklärung, OA2020."),
+  titlePanel("Erfüllte OA-Indikatoren Rate"),
+  hr(),
+  br(),
+  tags$a("How we measure the OA level?\n"),
+  br(),
+  tags$a("we choose 6 indicators, OA Webseite of institution, OA-Beauftragte/r, OA Policy, Repositorium URL,Berliner Erklärung, OA2020."),
   checkboxGroupInput(inputId = "idicator",label="choose your OA indicator"),
   leafletOutput("mymap"),
   tableOutput("mydata"),
@@ -69,14 +58,17 @@ server <- function( input, output, session) {
       addCircleMarkers(
         data=map.data,lat =map.data$lat,lng = map.data$lon,radius =~10*OpenScore_institution*0.01,
         color = ~pal(OpenScore_institution),fillColor = ~pal(OpenScore_institution),opacity = 1,fillOpacity = .5,
-        label = paste0(as.character(map.data$OpenScore_institution),"%")
+        label = paste0(map.data$Name.der.Institution,": ",as.character(map.data$OpenScore_institution),"% ", as.character(map.data$Ort),": ",as.character(map.data$bundesländer_score),"% Germany:",as.character(map.data$country_score),"%"),
+        options = markerOptions(minZoom=15,maxZoom=20)
+        
         )%>%
       addLegend("bottomright",
                 pal=pal,
                 values=paste0(as.character(map.data$OpenScore_institution),"%"),
                 opacity=0.7 ,
-                title = "OA rate"
+                title = "Erfüllte OA-Indikatoren Rate"
                 )
+     
     
                         
   } )
