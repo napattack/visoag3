@@ -53,14 +53,14 @@ map.data<-as.data.frame.list(unique_join[c( "lon","lat","OpenScore_institution")
 
 ui <- fluidPage(
   titlePanel("OpenAccess Visibility"),
-  sidebarLayout(
-    sidebarPanel()
-  ),
-  mainPanel(
+  tags$a("How we measure the OA level? "),
+  tags$a("OA Webseite of institution, OA-Beauftragte/r, OA Policy OR OA Leitlinie,Repositorium URL,Berliner Erklärung, OA2020."),
+  checkboxGroupInput(inputId = "idicator",label="choose your OA indicator"),
   leafletOutput("mymap"),
-  p())
+  tableOutput("mydata"),
+  p()
   )
-pal<-colorBin(palette = "OrRd",10,domain = map.data$OpenScore_institution)
+pal<-colorBin(palette = "OrRd",9,domain = map.data$OpenScore_institution)
 server <- function( input, output, session) {
   #make interactive app 
   output$mymap <- renderLeaflet({
@@ -79,7 +79,8 @@ server <- function( input, output, session) {
                 )
     
                         
-  })
+  } )
+  output$mydata<-renderDataTable(expr = map.data)
 }
 
 
