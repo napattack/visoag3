@@ -1,5 +1,7 @@
 library(shiny)
 library(leaflet)
+library(tidyverse)
+library(htmlwidgets)
 #clean up geodata, somehow they have duplicated wikidata id
 #data<-read.csv("data/geo_data.csv")
 #data<-data%>%
@@ -45,36 +47,41 @@ colnames(unique_join)
 map.data<-as.data.frame.list(unique_join[c( "lon","lat","OpenScore_institution")])
 ##input additional information as a pop up
 
-download.file("https://github.com/iceweasel1/COVID-19-Germany/blob/master/germany_with_source.csv",destfile = 
-                "data/Bundesländer_geo.csv")
-library(vroom)
-Bund_geo<-read.csv("data/Bund_geo.csv",encoding = "UTF-8")
-Bund_geo<-Bund_geo[,c(3,4,5,6)]
 
 #m<-leaflet()%>%addTiles()%>%
 #  addCircleMarkers(data=map.data,lat =map.data$lat,lng = map.data$lon,radius =~10*OpenScore_institution*0.01) 
 
-r_colors <- rgb(t(col2rgb(colors()) / 255))
-names(r_colors) <- colors()
-
 ui <- fluidPage(
   titlePanel("OpenAccess Visibility"),
- leafletOutput("mymap"),
-  p(),
-  actionButton("recalc", "New points")
-)
-
+  sidebarLayout(
+    sidebarPanel()
+  ),
+  mainPanel(
+  leafletOutput("mymap"),
+  p())
+  )
+pal<-colorBin(palette = "OrRd",10,domain = map.data$OpenScore_institution)
 server <- function( input, output, session) {
-  
-   points <- eventReactive(input$recalc, {
-    cbind(rnorm(40) * 2 + 13, rnorm(40) + 48)
-  }, ignoreNULL = FALSE)
-  
+  #make interactive app 
   output$mymap <- renderLeaflet({
-    leaflet()%>%addTiles()%>%
-      addCircleMarkers(data=map.data,lat =map.data$lat,lng = map.data$lon,radius =~10*OpenScore_institution*0.01,color="#BB3E03",label = map.data$OpenScore_institution) 
+    leaflet()%>%
+      addProviderTiles(provider="CartoDB.Positron")%>%
+      addCircleMarkers(
+        data=map.data,lat =map.data$lat,lng = map.data$lon,radius =~10*OpenScore_institution*0.01,
+        color = ~pal(OpenScore_institution),fillColor = ~pal(OpenScore_institution),opacity = 1,fillOpacity = .5,
+        label = paste0(as.character(map.data$OpenScore_institution),"%")
+        )%>%
+      addLegend("bottomright",
+                pal=pal,
+                values=paste0(as.character(map.data$OpenScore_institution),"%"),
+                opacity=0.7 ,
+                title = "OA rate"
+                )
+    
+                        
   })
 }
+
 
 shinyApp(ui, server)
   
