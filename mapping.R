@@ -4,7 +4,9 @@ library(leaflet)
 library(tidyverse)
 library(htmlwidgets)
 library(DT)
-
+library(plyr)
+library(stringr)
+getData('GADM', country='UKR', level=1)
 
 #clean datatable and saved, you dont have to run this
 #Score<-read.csv("data/cleanScore.csv")
@@ -27,9 +29,23 @@ library(DT)
 
 
 #map.data<-unique_join
+geo_de<-read.csv("data/Geo_DE.csv",fileEncoding = "UTF-8-BOM")
+geo_de$LON<-as.numeric((geo_de$lon))
+geo_de$LAT<-as.numeric((geo_de$lat))
+
 
 map.data<-read.csv("data/mapping.csv")
+map.data$ZoomLevel<-c("3")
 
+level2<-left_join(map.data,geo_de,by=c("X"="place"))
+level2<-level2%>%
+  filter(!is.na(LON))
+level2<-as.data.frame(unique(level2[,c("X","LON","LAT","bundesländer_score","country_score")]))
+colnames(level2)<-c("X","lon","lat","bundesländer_score","country_score")
+data<-rbind.fill(map.data,level2)
+data[is.na(data$ZoomLevel),33]<-"2"
+data[data$ZoomLevel==2,16]<-data[data$ZoomLevel==2,17]
+map.data<-data
 
 ui <- fluidPage(
   includeCSS("styles.css"),
@@ -80,8 +96,9 @@ ui <- fluidPage(
       )
       )))
 
+
 pal<-colorBin(palette = "OrRd",7,domain = map.data$OpenScore_institution)
-server <- function( input, output) {
+server <- function( input, output,session) {
    dataset<- reactive({
   if(is.null(input$insType)&is.null(input$bund)){
     dataset<-map.data
@@ -105,12 +122,15 @@ server <- function( input, output) {
       addProviderTiles(provider="CartoDB.Positron")%>%
      # addTiles(tags$a(paste0("Map of OA level by",as.character(input$insType))),)%>%
       addCircleMarkers(
-        data= dataset(),
+        data= dataset(),group=dataset()$ZoomLevel,
         lat =dataset()$lat,lng = dataset()$lon,radius =8,
         color = ~pal(OpenScore_institution),fillColor = ~pal(OpenScore_institution),opacity = 1,fillOpacity = .8,
-        label = paste0(dataset()$Name.der.Institution,": ",as.character(dataset()$OpenScore_institution),"% ", as.character(dataset()$X),": ",as.character(dataset()$bundesländer_score),"% Germany:",as.character(dataset()$country_score),"%"),
+        label = str_replace_na(paste0(dataset()$Name.der.Institution,": ",as.character(dataset()$OpenScore_institution),"% ", as.character(dataset()$X),": ",as.character(dataset()$bundesländer_score),"% Germany:",as.character(dataset()$country_score),"%"),replacement=""),
         stroke = FALSE,
         popup=dataset()$additional.infos)%>%
+        
+        groupOptions("3", zoomLevels = 6:18)%>%
+      
         addLegend("bottomright",
                 pal=pal,
                 values=paste0(as.character(~OpenScore_institution),"%"),
@@ -118,7 +138,7 @@ server <- function( input, output) {
                 title = "Rate institutioneller Offenheit") } )
     
      output$mytable<-renderTable({
-       dataset()[,c(1:5,15:26)]
+       dataset()
     })
       output$downloadData <- downloadHandler(
       filename = function() {
