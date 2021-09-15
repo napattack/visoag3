@@ -1,3 +1,4 @@
+
 library(shiny)
 library(leaflet)
 library(tidyverse)
@@ -47,7 +48,7 @@ ui <- fluidPage(
                                      , "Mecklenburg-Vorpommern" ,"Schleswig-Holstein"  ,"Thüringen"             
                                      ,"Sachsen" ,"Rheinland-Pfalz" , "Saarland"              
                                      ,"Bremen")),
-  downloadButton("doenloadData","Download")
+  downloadButton("downloadData","Download")
   
   ),
   mainPanel(
@@ -88,7 +89,6 @@ server <- function( input, output) {
       addProviderTiles(provider="CartoDB.Positron")%>%
      # addTiles(tags$a(paste0("Map of OA level by",as.character(input$insType))),)%>%
       addCircleMarkers(
-        
         data= dataset(),
         lat =dataset()$lat,lng = dataset()$lon,radius =~15*dataset()$OpenScore_institution*0.01,
         color = ~pal(OpenScore_institution),fillColor = ~pal(OpenScore_institution),opacity = 1,fillOpacity = .8,
@@ -102,14 +102,17 @@ server <- function( input, output) {
                 title = "Erfüllte OA-Indikatoren Rate") } )
     
      output$mytable<-renderTable({
-      dataset()
-    })
+      dataset()[,c(1:5,15:27)]
+       
+    },options = list(aLengthMenu = c(5, 30, 50), iDisplayLength = 5, bSortClasses = TRUE,
+                     aoColumnDefs = list(sWidth = "50px", aTargets = list(1))))
+     
     output$downloadData <- downloadHandler(
       filename = function() {
         paste("BAOA",date(), ".csv", sep = "")
       },
-      content = function() {
-        write.csv(dataset(), row.names = FALSE)
+      content = function(file) {
+        write.csv(dataset()[,c(1:5,15:27)], file,row.names = FALSE)
       }
     )
       
