@@ -5,20 +5,22 @@ library(tidyverse)
 library(htmlwidgets)
 library(DT)
 
+
 #clean datatable and saved, you dont have to run this
 #Score<-read.csv("data/cleanScore.csv")
 #data<-read.csv("data/geo_data_woduplicateitem.csv")
 #join<-left_join(Score,data)
 
-#write.csv(test,"data/join_score_wiki.csv",row.names = FALSE)
+
 
 #clean table, for no wikidata id 
 #clean_join<-join%>%
- # filter(!is.na(Wikidata.ID))%>%
-#  filter(Wikidata.ID!="Recherche fehlt")
+  #filter(!is.na(Wikidata.ID))%>%
+ # filter(Wikidata.ID!="Recherche fehlt")
 #unique_join<-clean_join[order(clean_join$Wikidata.ID,-abs(clean_join$OpenScore_institution)),]
 #unique_join<-unique_join%>%
  # filter(!is.na(item))
+
 #length(unique(unique_join$Wikidata.ID))
 #write.csv(unique_join,"data/mapping.csv",row.names = FALSE)
 
@@ -28,17 +30,17 @@ library(DT)
 
 map.data<-read.csv("data/mapping.csv")
 
+
 ui <- fluidPage(
+  includeCSS("styles.css"),
+
   titlePanel("Bundesländer-Atlas Open Access (BAOA)"),
-  hr(),
-  br(),
-  tags$a("Der BAOA versteht sich als Tool zur Informationsvisualisierung und -exploration."),
-  br(),
-  sidebarLayout(
+
+ 
     # Sidebar panel for inputs ----
-  sidebarPanel(width = 2,
-               br(),
-               tags$a("Find your filters here"),
+  sidebarPanel(
+    width = 2,
+    helpText("Find your filter here"),
   checkboxGroupInput(inputId = "insType",label="Institution Type",
                        choices = list("Universität","Hochschule","ForschungsInstitution")),
   checkboxGroupInput(inputId = "bund",label="Bundesländer",
@@ -48,22 +50,36 @@ ui <- fluidPage(
                                      , "Mecklenburg-Vorpommern" ,"Schleswig-Holstein"  ,"Thüringen"             
                                      ,"Sachsen" ,"Rheinland-Pfalz" , "Saarland"              
                                      ,"Bremen")),
-  downloadButton("downloadData","Download")
-  
-  ),
+  downloadButton("downloadData","Download")),
   mainPanel(
-  width = 10,
-  leafletOutput("mymap"),
-  tableOutput("mytable"),
-#  dataTableOutput("mytable"),
-  p(),
-  hr(),
-  br(),
-  tags$a("Die Datensammlung des BAOA entsteht im Rahmen des Projekts open-access.network durch den Projektpartner Open-Access-Büro Berlin an der Universitätsbibliothek der Freien Universität Berlin. Allgemeine Informationen zum Projekt und dem Konzept des Bundesländer-Atlas können in der aktuellen Version 3.0 des Konzeptpapiers abgerufen werden (DOI: https://doi.org/10.5281/zenodo.4644125). An der Erstellung der Daten waren beteiligt: Maxi Kindling, Sophie Kobialka, Maike Neufend, Agnieszka Wenninger (Stand: 4.9.2021)")
-    
-  )
-  )
-)
+    tabsetPanel(
+      id="tabs",
+      tabPanel(
+        title="Map",
+        leafletOutput("mymap",width = "1400px",height = "700px")
+      
+      ),
+      tabPanel(
+        title="Map data",
+        tableOutput("mytable")
+      ),
+      tabPanel(
+        title="User guide",
+        p("Der BAOA ist ein Tool zur Informationsvisualisierung und -exploration von institutioneller Offenheit deutscher(, öffentlich geförderter) Hochschulen, Universitäten und Forschungseinrichtungen. Er bietet Informationen auf den Ebenen “Deutschland”, der Bundesländer und der einzelnen Einrichtungen. Zum Zweck der Einordnung und Vergleichbarkeit wurde ein System der Bewertung der Offenheit entwickelt, der Monitor institutioneller Offenheit, welches basierend auf sechs Indikatoren (siehe Weitere Informationen) eine Bewertung der Offenheit zulässt und auf allen drei Ebenen abbildet."),
+        br(),
+        p("With our map visualisation, you could find the OA implemented rate in 6 dimentions, OA website, OA Beauftragte, OA Policy,Repositorium url, Berlin Erklärung, OA 2020"),
+        p("Sofar we only have two fiters options, institution type and Bundesländer, you could combine them with AND operation defaultly, inside each filter is combining with OR defaultly."),
+        p("we have three panels in this website, including map visualization of our OA indicator. Data panel, which present in table way. And User guide panel, which is you are reading right now:D"),
+        br(),
+        strong("Data source"),
+        p("Die Datensammlung des BAOA entsteht im Rahmen des Projekts open-access.network durch den Projektpartner Open-Access-Büro Berlin an der Universitätsbibliothek der Freien Universität Berlin. Allgemeine Informationen zum Projekt und dem Konzept des Bundesländer-Atlas können in der aktuellen Version 3.0 des Konzeptpapiers abgerufen werden (DOI: https://doi.org/10.5281/zenodo.4644125). An der Erstellung der Daten waren beteiligt: Maxi Kindling, Sophie Kobialka, Maike Neufend, Agnieszka Wenninger (Stand: 4.9.2021)"),
+        br(),
+        p("Source code is available at https://github.com/napattack/visoag3, contact: yiwang@hu-berlin.de"),
+        strong("contributors"),
+        p("Philipp","Lydia","Yi Wang")
+      )
+      )))
+
 pal<-colorBin(palette = "OrRd",7,domain = map.data$OpenScore_institution)
 server <- function( input, output) {
    dataset<- reactive({
@@ -90,29 +106,26 @@ server <- function( input, output) {
      # addTiles(tags$a(paste0("Map of OA level by",as.character(input$insType))),)%>%
       addCircleMarkers(
         data= dataset(),
-        lat =dataset()$lat,lng = dataset()$lon,radius =~15*dataset()$OpenScore_institution*0.01,
+        lat =dataset()$lat,lng = dataset()$lon,radius =8,
         color = ~pal(OpenScore_institution),fillColor = ~pal(OpenScore_institution),opacity = 1,fillOpacity = .8,
-        label = paste0(dataset()$Name.der.Institution,": ",as.character(dataset()$OpenScore_institution),"% ", as.character(dataset()$Ort),": ",as.character(dataset()$bundesländer_score),"% Germany:",as.character(dataset()$country_score),"%"),
-        stroke = FALSE
-        ,popup=dataset()$additional.infos)%>%
+        label = paste0(dataset()$Name.der.Institution,": ",as.character(dataset()$OpenScore_institution),"% ", as.character(dataset()$X),": ",as.character(dataset()$bundesländer_score),"% Germany:",as.character(dataset()$country_score),"%"),
+        stroke = FALSE,
+        popup=dataset()$additional.infos)%>%
         addLegend("bottomright",
                 pal=pal,
                 values=paste0(as.character(~OpenScore_institution),"%"),
                 opacity=0.7 ,
-                title = "Erfüllte OA-Indikatoren Rate") } )
+                title = "Rate institutioneller Offenheit") } )
     
      output$mytable<-renderTable({
-      dataset()[,c(1:5,15:27)]
-       
-    },options = list(aLengthMenu = c(5, 30, 50), iDisplayLength = 5, bSortClasses = TRUE,
-                     aoColumnDefs = list(sWidth = "50px", aTargets = list(1))))
-     
-    output$downloadData <- downloadHandler(
+       dataset()[,c(1:5,15:26)]
+    })
+      output$downloadData <- downloadHandler(
       filename = function() {
         paste("BAOA",date(), ".csv", sep = "")
       },
       content = function(file) {
-        write.csv(dataset()[,c(1:5,15:27)], file,row.names = FALSE)
+        write.csv(dataset()[,c(1:5,15:26)], file,row.names = FALSE)
       }
     )
       

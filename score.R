@@ -1,4 +1,4 @@
-
+library(ggplot)
 library(tidyverse)
 library(dplyr)
 
@@ -64,32 +64,32 @@ institution<-institution%>%
   mutate(add.OA.Leitlinie.URL=ifelse(OA.Leitlinie.URL=="Recherche fehlt",NA,OA.Leitlinie.URL))%>%
   mutate(add.Repositorium.URL=ifelse(Repositorium.URL=="Recherche fehlt",NA,Repositorium.URL))%>%
   mutate(add.OA.Verlag.URL=ifelse(OA.Verlag=="nein",NA,OA.Verlag))
-
+#"<a href='",dataset()$add.OA_Website,"'>",dataset()$add.OA_Website,"</a>"
 add.infos<- data.frame(infos = as.character())
 for(i in c(1:nrow(institution))){
   add.col<-data.frame(infos = as.character())
   add.col<-" "
   if(!is.na(institution$add.OA_Website[i])){
-    add.col<-paste0(" OA websites:",institution$add.OA_Website[i])
+    add.col<-paste0(" OA websites:","<a href='",institution$add.OA_Website[i],"'>",institution$add.OA_Website[i],"</a>")
   }else{add.col<-paste0(add.col,"")}
   if(!is.na(institution$add.OA_Beauftragte[i])){
-    add.col<-paste0(add.col," OA Beauftragte:",institution$add.OA_Beauftragte[i])
+    add.col<-paste0(add.col," OA Beauftragte:","<a href='",institution$add.OA_Beauftragte[i],"'>",institution$add.OA_Beauftragte[i],"</a>")
   }else{add.col<-paste0(add.col,"")}
   if(!is.na(institution$add.OA_Beauftragte_URL[i])){
-    add.col<-paste0(add.col," OA Beauftragte URL:",institution$add.OA_Beauftragte_URL[i])
+    add.col<-paste0(add.col," OA Beauftragte URL:","<a href='",institution$add.OA_Beauftragte_URL[i],"'>",institution$add.OA_Beauftragte_URL[i],"</a>")
   }else{add.col<-paste0(add.col,"")}
   if(!is.na(institution$add.OA.Policy.URL[i])){
-    add.col<-paste0(add.col," OA Policy URL:",institution$add.OA.Policy.URL[i])
+    add.col<-paste0(add.col," OA Policy URL:","<a href='",institution$add.OA.Policy.URL[i],"'>",institution$add.OA.Policy.URL[i],"</a>")
   }else{add.col<-paste0(add.col,"")}
 
   if(!is.na(institution$add.OA.Leitlinie.URL[i])){
-    add.col<-paste0(add.col," OA Leitlinie URL:",institution$add.OA.Leitlinie.URL[i])
+    add.col<-paste0(add.col," OA Leitlinie URL:","<a href='",institution$add.OA.Leitlinie.URL[i],"'>",institution$add.OA.Leitlinie.URL[i],"</a>")
   }else{add.col<-paste0(add.col,"")}
   if(!is.na(institution$add.Repositorium.URL[i])){
-    add.col<-paste0(add.col," OA Repositorium URL:",institution$add.Repositorium.URL[i])
+    add.col<-paste0(add.col," OA Repositorium URL:","<a href='",institution$add.Repositorium.URL[i],"'>",institution$add.Repositorium.URL[i],"</a>")
   }else{add.col<-paste0(add.col,"")}
   if(!is.na(institution$add.OA.Verlag.URL[i])){
-    add.col<-paste0(add.col," OA Verlag URL:",institution$add.OA.Verlag.URL[i])
+    add.col<-paste0(add.col," OA Verlag URL:","<a href='",institution$add.OA.Verlag.URL[i],"'>",institution$add.OA.Verlag.URL[i],"</a>")
   }else{add.col<-paste0(add.col,"")
   
   }
@@ -101,7 +101,9 @@ for(i in c(1:nrow(institution))){
 
 institution<-cbind(institution,add.infos)
 
-names(institution)[names(institution)=="X...OA.Repositorium.URL.https...www.hgb.leipzig.de.einrichtungen.bibliothek.qucosa.."]<-"additional.infos"
+names(institution)[names(institution)=="X...OA.Repositorium.URL..a.href..https...www.hgb.leipzig.de.einrichtungen.bibliothek.qucosa...https...www.hgb.leipzig.de.einrichtungen.bibliothek.qucosa...a.."]<-"additional.infos"
+
+
 
 #plot the score by the bundesländer 
 plot <-institution%>%
@@ -193,32 +195,7 @@ clean<-institution[,c( "Wikidata.ID","X","Name.der.Institution", "Ort",
              "add.OA.Verlag.URL",                           
              "additional.infos"  )]
 write.csv(clean,"data/cleanScore.csv",row.names = FALSE)
-test<-read.csv("data/cleanScore.csv")
 
-test<-test%>%
-  mutate(Score_web_de=nrow(test%>%filter(bool_OA_Website=="TRUE"))/nrow(test))%>%
-  mutate(Score_Beauftragte_de=nrow(test%>%filter(bool_OA_Beauftragte=="TRUE"))/nrow(test))%>%
-  mutate(Score_PL_de=nrow(test%>%filter(bool_OA.PL=="TRUE"))/nrow(test))%>%
-  mutate(Score_Repositorium_de=nrow(test%>%filter(bool_Repositorium.URL=="TRUE"))/nrow(test))%>%
-  mutate(Score_OA2020_de=nrow(test%>%filter(bool_OA2020=="TRUE"))/nrow(test))%>%
-  mutate(Score_Berliner.Erklärung_de=nrow(test%>%filter(bool_Berliner.Erklärung=="TRUE"))/nrow(test))
-  
-p<-test[1,c(26,27,28,29,30,31)]
-row.names(p)
 
-  
-  
-test<-test%>%
-  group_by(X)%>%
-  mutate(Score_web_Bunde=nrow(test%>%filter(bool_OA_Website=="TRUE"))/nrow(test))
-  
-  
-  
-  
-  mutate(Score_Beauftragte_Bunde=nrow(test%>%filter(bool_OA_Beauftragte=="TRUE"))/nrow(test))%>%
-  mutate(Score_PL_Bunde=nrow(test%>%filter(bool_OA.PL=="TRUE"))/nrow(test))%>%
-  mutate(Score_Repositorium_Bunde=nrow(test%>%filter(bool_Repositorium.URL=="TRUE"))/nrow(test))%>%
-  mutate(Score_OA2020_Bunde=nrow(test%>%filter(bool_OA2020=="TRUE"))/nrow(test))%>%
-  mutate(Score_Berliner.Erklärung_Bunde=nrow(test%>%filter(bool_Berliner.Erklärung=="TRUE"))/nrow(test))
 
   
