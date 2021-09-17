@@ -109,13 +109,12 @@ names(institution)[names(institution)=="X...OA.Repositorium.URL..a.href..https..
 plot <-institution%>%
   group_by(X)%>%
   summarise(countryScore=mean(OpenScore_institution))%>%
-  ggplot(aes(x=reorder(X,countryScore),y=countryScore))+
+  ggplot(aes(x=reorder(X,countryScore),y=countryScore),colors=colorBin(palette = "OrRd",7,domain = map.data$OpenScore_institution))+
   geom_col(alpha = 0.8, width = 0.8)+
   geom_text(aes(x=reorder(X,countryScore),label=round(countryScore,2)))+
-  Template+
-  coord_flip()
+  Template
 plot
-ggsave("plots/score_bundesländer.png",dpi=500,width = 15,height=5)
+ggsave("plots/score_bundesländer.png",dpi=500,width = 10,height=3)
 
   
 
