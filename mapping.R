@@ -1,4 +1,4 @@
-install.packages('rsconnect')
+
 library(shiny)
 library(leaflet)
 library(tidyverse)
@@ -8,46 +8,6 @@ library(plyr)
 library(rsconnect)
 
 
-
-#clean datatable and saved, you dont have to run this
-#Score<-read.csv("data/cleanScore.csv")
-#data<-read.csv("data/geo_data_woduplicateitem.csv")
-#join<-left_join(Score,data)
-
-
-
-#clean table, for no wikidata id 
-#clean_join<-join%>%
-  #filter(!is.na(Wikidata.ID))%>%
- # filter(Wikidata.ID!="Recherche fehlt")
-#unique_join<-clean_join[order(clean_join$Wikidata.ID,-abs(clean_join$OpenScore_institution)),]
-#unique_join<-unique_join%>%
- # filter(!is.na(item))
-
-#length(unique(unique_join$Wikidata.ID))
-#write.csv(map.data,"data/mapping.csv",row.names = FALSE)
-
-
-
-#map.data<-unique_join
-#geo_de<-read.csv("data/Geo_DE.csv",fileEncoding = "UTF-8-BOM")
-#geo_de$LON<-as.numeric((geo_de$lon))
-#geo_de$LAT<-as.numeric((geo_de$lat))
-
-
-#map.data<-read.csv("data/mapping.csv")
-#map.data$ZoomLevel<-c("3")
-
-#level2<-left_join(map.data,geo_de,by=c("X"="place"))
-#level2<-level2%>%
-#  filter(!is.na(LON))
-#level2<-as.data.frame(unique(level2[,c("X","LON","LAT","bundesländer_score","country_score")]))
-#colnames(level2)<-c("X","lon","lat","bundesländer_score","country_score")
-#data<-rbind.fill(map.data,level2)
-#data[is.na(data$ZoomLevel),33]<-"2"
-#data[data$ZoomLevel==2,16]<-data[data$ZoomLevel==2,17]
-#write.csv(map.data,"data/mapping.csv",row.names = FALSE)
-#map.data<-data
 
 map.data<-read.csv("data/mapping.csv")
 ui <- fluidPage(
