@@ -8,8 +8,10 @@ library(plyr)
 library(rsconnect)
 
 
-
+#loading our datasets
 map.data<-read.csv("data/mapping.csv")
+##i planed to make zoom funtion, but sofar not working
+map.data<-map.data%>%filter(ZoomLevel=="3")
 ui <- fluidPage(
   includeCSS("styles.css"),
   
@@ -95,7 +97,7 @@ server <- function( input, output){
           label =paste0(dataset()$Name.der.Institution,": ",as.character(dataset()$OpenScore_institution),"% ", as.character(dataset()$X),": ",as.character(dataset()$bundesländer_score),"% Germany:",as.character(dataset()$country_score),"%"),
           stroke = FALSE,
           popup=dataset()$additional.infos)%>%
-        groupOptions("3", zoomLevels = 7:18)%>%
+      #  groupOptions("3", zoomLevels = 7:18)%>%
           addLegend("bottomright",
                   pal=pal,
                   values=paste0(as.character(~OpenScore_institution),"%"),

@@ -16,6 +16,7 @@ institution[institution$X==" Sachsen",1]<-"Sachsen"
 institution<-institution%>%
   filter(Einrichtungsart!="Ressortforschung")
 
+#Rechercher fehlt would be consider as FALSE, if there is a valid information, would be considered as TRUE
 
 
 institution$institutionType<-ifelse(grepl("schung",institution$Einrichtungsart),"ForschungsInstitution",ifelse(grepl("Uni",institution$Einrichtungsart),"Universität","Hochschule"))
@@ -70,9 +71,11 @@ for(i in c(1:nrow(institution))){
   add.col<-data.frame(infos = as.character())
   add.col<-" "
   if(!is.na(institution$add.OA_Website[i])){
+    #we would like it later on to presentated in a link format in our frontend, so that they could directly click on
     add.col<-paste0(" OA websites:","<a href='",institution$add.OA_Website[i],"'>",institution$add.OA_Website[i],"</a>")
   }else{add.col<-paste0(add.col,"")}
   if(!is.na(institution$add.OA_Beauftragte[i])){
+    
     add.col<-paste0(add.col," OA Beauftragte:","<a href='",institution$add.OA_Beauftragte[i],"'>",institution$add.OA_Beauftragte[i],"</a>")
   }else{add.col<-paste0(add.col,"")}
   if(!is.na(institution$add.OA_Beauftragte_URL[i])){
@@ -104,7 +107,8 @@ institution<-cbind(institution,add.infos)
 names(institution)[names(institution)=="X...OA.Repositorium.URL..a.href..https...www.hgb.leipzig.de.einrichtungen.bibliothek.qucosa...https...www.hgb.leipzig.de.einrichtungen.bibliothek.qucosa...a.."]<-"additional.infos"
 
 
-
+####
+##here is explorative analysis 
 #plot the score by the bundesländer 
 plot <-institution%>%
   group_by(X)%>%
