@@ -10,7 +10,7 @@ library(rsconnect)
 
 #loading our datasets
 map.data<-read.csv("data/mapping.csv")
-##i planed to make zoom funtion, but sofar not working
+##i planed to make zoom funtion, but sofar not working, so i filter it out here. 
 map.data<-map.data%>%filter(ZoomLevel=="3")
 ui <- fluidPage(
   includeCSS("styles.css"),
